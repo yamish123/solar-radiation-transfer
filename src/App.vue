@@ -1,29 +1,23 @@
 <template>
   <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png" />
-    <HelloWorld msg="Welcome to Your Vue.js + TypeScript App" />
+    <div>観測周波数(GHz)<input type="number" v-model="freqnency" /></div>
+    <div>輝度温度(K): {{ brightnessTemperature }}</div>
   </div>
 </template>
 
 <script lang="ts">
 import { Component, Vue } from "vue-property-decorator";
-import HelloWorld from "./components/HelloWorld.vue";
+import { calcTotalBrightnesstemperature } from "./radTrans";
+import { atmosphereModel } from "./selhorst2005";
 
-@Component({
-  components: {
-    HelloWorld
+@Component
+export default class App extends Vue {
+  freqnency = 17;
+
+  get brightnessTemperature() {
+    return Math.floor(
+      calcTotalBrightnesstemperature(this.freqnency * 1e9, atmosphereModel)
+    );
   }
-})
-export default class App extends Vue {}
-</script>
-
-<style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
 }
-</style>
+</script>
