@@ -1,21 +1,26 @@
+import { unit, Unit } from "mathjs";
+
 export type Atmosphere = AtmosphereLayer[];
 
 type AtmosphereLayer = {
-  height: number;
-  temperature: number;
-  density: number;
+  height: Unit;
+  temperature: Unit;
+  density: Unit;
 };
 
 /**
- * GauntFactor(gff)の計算
+ * GauntFactor(gff)を返す
  * @param temperature 電子温度 (K)
  * @param frequency 観測周波数 (Hz)
+ * @returns GauntFactor(gff)
  */
-function calcGauntFactor(temperature: number, frequency: number) {
-  if (temperature > 2e5) {
-    return 18.2 + Math.log(temperature * (3 / 2)) - Math.log(frequency);
+function calcGauntFactor(temperature: Unit, frequency: Unit) {
+  const t = temperature.toNumber("K");
+  const f = frequency.toNumber("Hz");
+  if (t > 2e5) {
+    return 18.2 + Math.log(t * (3 / 2)) - Math.log(f);
   } else {
-    return 24.5 + Math.log(temperature) - Math.log(frequency);
+    return 24.5 + Math.log(t) - Math.log(f);
   }
 }
 
@@ -24,10 +29,11 @@ function calcGauntFactor(temperature: number, frequency: number) {
  * @param temperature 電子温度 (K)
  * @param frequency 観測周波数 (Hz)
  * @param heavyIonCorrection 重イオンの補正係数
+ * @returns プラズマパラメータ(ξ)
  */
 function calcPlasmaParameter(
-  temperature: number,
-  frequency: number,
+  temperature: Unit,
+  frequency: Unit,
   heavyIonCorrection = 1.2
 ) {
   return (
@@ -36,72 +42,77 @@ function calcPlasmaParameter(
 }
 
 /**
- * エミッションメジャー(ΔEM)の計算
+ * エミッションメジャー(ΔEM)を返す
  * 電子は視線方向に対して一様に分布していると仮定する
  * @param electronDensity 電子密度 (cm^-3)
  * @param length 大気の厚さ (cm)
+ * @returns エミッションメジャー(ΔEM)
  */
-function calcEmissionMeasure(electronDensity: number, length = 1e7) {
-  return Math.pow(electronDensity, 2) * length;
+function calcEmissionMeasure(electronDensity: Unit, length = 1e7) {
+  const ed = electronDensity.toNumber("cm^3");
+  return Math.pow(ed, 2) * length;
 }
 
 /**
- * 光学的厚さ(Δτ)の計算
+ * 光学的厚さ(Δτ)を返す
  * @param temperature 電子温度 (K)
  * @param frequency 観測周波数 (Hz)
  * @param electronDensity 電子密度 (cm^-3)
+ * @returns 光学的厚さ(Δτ)
  */
 function calcOpticalThickness(
-  temperature: number,
-  frequency: number,
-  electronDensity: number
+  temperature: Unit,
+  frequency: Unit,
+  electronDensity: Unit
 ) {
   const plasmaParameter = calcPlasmaParameter(temperature, frequency);
   const emissionMeasure = calcEmissionMeasure(electronDensity);
+  const t = temperature.toNumber("K");
+  const f = frequency.toNumber("Hz");
   return (
     (1.2 * plasmaParameter * emissionMeasure) /
-    (Math.pow(temperature, 1.5) * Math.pow(frequency, 2))
+    (Math.pow(t, 1.5) * Math.pow(f, 2))
   );
 }
 
 /**
- * 放射強度(Tb)の計算
+ * 放射強度(Tb)を返す
  * @param temperature 電子温度 (K)
  * @param frequency 観測周波数 (Hz)
  * @param electronDensity 電子密度 (cm^-3)
  * @param backgroundBrightnessTemperature 背景からの放射強度 (K)
+ * @retunrs 放射強度(Tb)
  */
 function calcBrightnessTemperature(
-  temperature: number,
-  frequency: number,
-  electronDensity: number,
-  backgroundBrightnessTemperature?: number
+  temperature: Unit,
+  frequency: Unit,
+  electronDensity: Unit,
+  backgroundBrightnessTemperature?: Unit
 ) {
   const opticalThickness = calcOpticalThickness(
     temperature,
     frequency,
     electronDensity
   );
-  const brightnessTemperature =
-    temperature * (1 - Math.exp(-1 * opticalThickness));
+  const t = temperature.toNumber("K");
+  const bbt = backgroundBrightnessTemperature?.toNumber("K") || 0;
+  const brightnessTemperature = t * (1 - Math.exp(-1 * opticalThickness));
 
   if (backgroundBrightnessTemperature == null) {
     return brightnessTemperature;
   } else {
-    return (
-      brightnessTemperature +
-      backgroundBrightnessTemperature * Math.exp(-1 * opticalThickness)
-    );
+    return brightnessTemperature + bbt * Math.exp(-1 * opticalThickness);
   }
 }
 
 /**
- * 観測される放射強度の計算
+ * 放射強度の観測値を返す
  * @param frequency 観測周波数 (Hz)
  * @param atmosphereModel 太陽大気モデル
+ * @returns 放射強度の観測値
  */
 function calcTotalBrightnesstemperature(
-  frequency: number,
+  frequency: Unit,
   atmosphereModel: Atmosphere
 ) {
   const brightnessTemperature = atmosphereModel.reduce((previous, current) => {
@@ -109,7 +120,7 @@ function calcTotalBrightnesstemperature(
       current.temperature,
       frequency,
       current.density,
-      previous
+      unit(previous, "K")
     );
   }, 0);
 

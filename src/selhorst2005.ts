@@ -1,4 +1,6 @@
-const atmosphereModel = [
+import { unit } from "mathjs";
+
+const atmosphereModelOrigin = [
   {
     height: 0,
     temperature: 6520,
@@ -505,5 +507,11 @@ const atmosphereModel = [
     density: 395056666.7
   }
 ];
+
+const atmosphereModel = atmosphereModelOrigin.map(val => ({
+  height: unit(val.height, "km"),
+  temperature: unit(val.temperature, "K"),
+  density: unit(val.density, "cm^3")
+}));
 
 export { atmosphereModel };
