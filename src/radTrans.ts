@@ -48,9 +48,10 @@ function calcPlasmaParameter(
  * @param length 大気の厚さ (cm)
  * @returns エミッションメジャー(ΔEM)
  */
-function calcEmissionMeasure(electronDensity: Unit, length = 1e7) {
+function calcEmissionMeasure(electronDensity: Unit, length?: Unit) {
+  const l = length?.toNumber("cm") || unit(10, "km").toNumber("cm");
   const ed = electronDensity.toNumber("cm^3");
-  return Math.pow(ed, 2) * length;
+  return Math.pow(ed, 2) * l;
 }
 
 /**
