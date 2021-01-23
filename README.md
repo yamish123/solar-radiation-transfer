@@ -1,6 +1,6 @@
 # solar-radiation-transfer
 
-qiita: https://qiita.com/yamish/private/82b87197a37ede8e6d03
+qiita: https://qiita.com/yamish/items/6567cb2cf892a3fc2f7b
 
 ## Project setup
 
